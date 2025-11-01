@@ -28,6 +28,11 @@ function App() {
   const [isAssistantLoading, setIsAssistantLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  // P0/P1 UI states
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [sendAlert, setSendAlert] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const countdownRef = useRef<number>(0);
+  const countdownTimerRef = useRef<number | null>(null);
   const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, userProfile: null });
   const tokenClientRef = useRef<any>(null);
   const accessTokenRef = useRef<string | null>(null);
@@ -266,13 +271,13 @@ function App() {
     setIsAssistantLoading(false);
   };
 
-  const handleSendAll = async () => {
+  const executeSend = async () => {
     if (!backendUrl) {
-      alert('Backend URL is not configured.');
+      setSendAlert({ type: 'error', message: 'Backend URL is not configured.' });
       return;
     }
     if (!auth.isLoggedIn) {
-      alert('Please sign in with Google to send emails.');
+      setSendAlert({ type: 'error', message: 'Please sign in with Google to send emails.' });
       return;
     }
     try {
@@ -305,6 +310,7 @@ function App() {
         };
         setMessages(prev => [...prev, resultMessage]);
         setIsAssistantOpen(true); // Auto-open to show results
+        setSendAlert({ type: 'success', message: `Send completed for ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}.` });
       } else {
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -313,6 +319,7 @@ function App() {
         };
         setMessages(prev => [...prev, errorMessage]);
         setIsAssistantOpen(true); // Auto-open to show error
+        setSendAlert({ type: 'error', message: apiResult.error || 'Send failed. Check assistant for details.' });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -322,8 +329,48 @@ function App() {
         text: `Authorization or network error: ${msg}`
       };
       setMessages(prev => [...prev, errorMessage]);
+      setSendAlert({ type: 'error', message: msg });
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // P0: Confirmation with 5s undo countdown
+  const handleSendAll = () => {
+    // Basic guardrails for empty recipients or missing headers
+    if (!recipients || recipients.length === 0) {
+      setSendAlert({ type: 'error', message: 'No recipients found. Please add recipient data first.' });
+      return;
+    }
+    setIsConfirmOpen(true);
+    countdownRef.current = 5;
+  };
+
+  const confirmAndStartCountdown = () => {
+    setIsConfirmOpen(false);
+    setSendAlert({ type: 'info', message: `Sending in ${countdownRef.current}s… You can undo.` });
+    // Update countdown every second
+    const tick = () => {
+      countdownRef.current -= 1;
+      if (countdownRef.current > 0) {
+        setSendAlert({ type: 'info', message: `Sending in ${countdownRef.current}s… You can undo.` });
+        countdownTimerRef.current = window.setTimeout(tick, 1000);
+      } else {
+        setSendAlert(null);
+        executeSend();
+        countdownTimerRef.current = null;
+      }
+    };
+    countdownTimerRef.current = window.setTimeout(tick, 1000);
+  };
+
+  const undoSend = () => {
+    if (countdownTimerRef.current) {
+      window.clearTimeout(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+      setSendAlert({ type: 'error', message: 'Send cancelled.' });
+      // Clear the message after a moment
+      window.setTimeout(() => setSendAlert(null), 3000);
     }
   };
 
@@ -438,6 +485,8 @@ function App() {
                 bodyTemplate={body}
                 onSendEmails={handleSendAll}
                 isSending={isSending}
+                alert={sendAlert}
+                onUndo={undoSend}
               />
             </div>
           </main>
@@ -460,6 +509,24 @@ function App() {
         isOpen={isAssistantOpen}
         setIsOpen={setIsAssistantOpen}
       />
+
+      {/* P0: Send confirmation modal */}
+      {isConfirmOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setIsConfirmOpen(false)}>
+          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-11/12 max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">Confirm send</h3>
+            <p className="text-gray-300 mb-4">You are about to send <span className="font-semibold">{recipients.length}</span> personalized email{recipients.length !== 1 ? 's' : ''}.</p>
+            <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-3 text-sm mb-4">
+              <p><span className="text-gray-400">From:</span> {auth.userProfile?.email || 'Your Google Account'}</p>
+              <p className="truncate"><span className="text-gray-400">Subject:</span> {subject || '(empty)'}</p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setIsConfirmOpen(false)} className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-md">Cancel</button>
+              <button onClick={confirmAndStartCountdown} className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md">Send in 5s</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

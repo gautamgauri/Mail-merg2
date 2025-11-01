@@ -9,6 +9,8 @@ interface PreviewProps {
   bodyTemplate: string;
   onSendEmails?: () => void;
   isSending?: boolean;
+  alert?: { type: 'success' | 'error' | 'info'; message: string } | null;
+  onUndo?: () => void;
 }
 
 const renderMerge = (template: string, recipient: Recipient): string => {
@@ -22,7 +24,7 @@ const renderMerge = (template: string, recipient: Recipient): string => {
 
 type OutputFormat = 'text' | 'csv' | 'html';
 
-export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, bodyTemplate, onSendEmails, isSending }) => {
+export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, bodyTemplate, onSendEmails, isSending, alert, onUndo }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('text');
   const [copyButtonText, setCopyButtonText] = useState('Copy to Clipboard');
@@ -110,6 +112,16 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
           </div>
         ) : (
           <>
+            {alert && (
+              <div className={`mb-4 rounded-xl px-4 py-3 border ${alert.type === 'success' ? 'bg-green-500/10 border-green-500/30 text-green-300' : alert.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-300' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'}`}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm">{alert.message}</p>
+                  {alert.type === 'info' && onUndo && (
+                    <button onClick={onUndo} className="text-xs bg-gray-800/60 hover:bg-gray-700 text-white px-3 py-1 rounded-md border border-gray-600">Undo</button>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="mb-6 p-4 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 rounded-xl">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -124,7 +136,7 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 mb-6">
+            <div className="grid grid-cols-1 gap-3 mb-6 sticky top-0 z-10">
               <button 
                 onClick={() => setIsModalOpen(true)}
                 className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition duration-300 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-green-500/20 flex items-center justify-center gap-2"

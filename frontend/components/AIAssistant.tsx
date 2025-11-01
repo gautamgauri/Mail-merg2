@@ -161,7 +161,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ messages, onSendMessag
             <div className="fixed bottom-6 right-6 z-50 group">
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="bg-gradient-to-br from-cyan-500 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 animate-bounce-slow relative"
+                    className="bg-gradient-to-br from-cyan-500 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 relative assistant-glow"
                     aria-label="Open AI Assistant"
                 >
                     <ChatBubbleIcon className="h-8 w-8" />
@@ -178,12 +178,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ messages, onSendMessag
                     </div>
                 </div>
                 <style>{`
-                    @keyframes bounce-slow {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-10px); }
+                    @keyframes glow {
+                        0% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
+                        70% { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+                        100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
                     }
-                    .animate-bounce-slow {
-                        animation: bounce-slow 3s ease-in-out infinite;
+                    .assistant-glow { animation: glow 3s ease-in-out infinite; }
+                    @media (prefers-reduced-motion: reduce) {
+                        .assistant-glow { animation: none; }
+                        .animate-pulse { animation: none; }
                     }
                 `}</style>
             </div>
