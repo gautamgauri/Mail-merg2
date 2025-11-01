@@ -6,23 +6,25 @@
 
 ### Frontend
 - **Service Name**: `mail-merge-frontend`
-- **URL**: https://mail-merge-frontend-nerx6mrxvq-uw.a.run.app
-- **Latest Revision**: `mail-merge-frontend-00005-z2m`
+- **URL**: https://mail-merge-frontend-685272246909.us-west1.run.app
+- **Latest Revision**: `mail-merge-frontend-00009-4sh`
 - **Region**: `us-west1`
 - **Status**: ✅ **HEALTHY**
 - **Features**:
   - OAuth Google Sign-In
   - Email Preview
   - Email Template Editor
-  - AI Assistant
+  - AI Assistant with Gemini
+  - Google Contacts Import
   - Contact Management
 
 ### Backend
 - **Service Name**: `ai-mail-merge-assistant`
-- **URL**: https://ai-mail-merge-assistant-nerx6mrxvq-uw.a.run.app
-- **Latest Revision**: `ai-mail-merge-assistant-00018-bnr`
+- **URL**: https://ai-mail-merge-assistant-685272246909.us-west1.run.app
+- **Latest Revision**: `ai-mail-merge-assistant-00019-7s2`
 - **Region**: `us-west1`
 - **Status**: ✅ **HEALTHY**
+- **Improvements**: Enhanced logging for debugging
 - **Endpoints**:
   - `health` - Health check ✅
   - `send` - Send emails via Gmail API ✅
@@ -67,6 +69,12 @@ curl -X POST https://ai-mail-merge-assistant-nerx6mrxvq-uw.a.run.app/ \
 - **Project Name**: Mail-Merge-Bodh-AI
 - **Region**: `us-west1`
 - **Service Account**: `685272246909-compute@developer.gserviceaccount.com`
+
+### APIs Enabled
+- ✅ Gmail API (`gmail.googleapis.com`)
+- ✅ Google Sheets API (`sheets.googleapis.com`)
+- ✅ Google Drive API (`drive.googleapis.com`)
+- ✅ Google People API (`people.googleapis.com`)
 
 ### OAuth Configuration
 - **Client ID**: `685272246909-h803s04kbdddqaupe2tvv3ro1elscrnk.apps.googleusercontent.com`
@@ -129,12 +137,28 @@ gcloud run deploy ai-mail-merge-assistant \
 - **Logs Viewer**: https://console.cloud.google.com/logs?project=gen-lang-client-0307407360
 - **IAM & Admin**: https://console.cloud.google.com/iam-admin?project=gen-lang-client-0307407360
 
-## Next Steps
+## Recent Updates
 
+### November 1, 2025 - Latest Deployment
+1. ✅ **Gmail API Enabled** - Fixed 500 error on email sending
+2. ✅ **Enhanced Backend Logging** - Added detailed logging for debugging
+3. ✅ **Google Contacts Integration** - Fixed People API endpoint
+4. ✅ **Frontend Improvements** - Modern UI with gradient backgrounds
+5. ✅ **OAuth Token Caching** - Reduced multiple auth prompts (50min cache)
+
+### Completed Milestones
 1. ✅ Frontend and Backend deployed from organized folder
 2. ✅ OAuth authentication working
-3. ✅ Email sending functionality implemented
+3. ✅ Email sending functionality fully operational
 4. ✅ Google Sheets logging configured
 5. ✅ All endpoints tested and verified
+6. ✅ Google Contacts import working
+7. ✅ All required Google APIs enabled
+
+## GitHub Repository
+
+- **Repository**: https://github.com/gautamgauri/Mail-merg2
+- **Branch**: main
+- **Status**: Public
 
 **The application is fully operational and ready for use!** 🎉
