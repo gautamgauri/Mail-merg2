@@ -209,11 +209,13 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
 
       {activeTab === 'manual' && (
         <div className="animate-fade-in space-y-4">
-          <p className="text-sm text-gray-400">Add or remove columns and rows, then fill in your recipient data. Click "Load Recipients" when ready.</p>
+          <p className="text-sm text-gray-400">The top row defines column names (e.g., "Email", "Name"). Data rows below contain actual recipient information. Click "Load Recipients" when ready.</p>
           <div className="overflow-x-auto">
             <div className="min-w-full">
               {/* Headers */}
-              <div className="flex items-center gap-2 pb-2 border-b border-gray-700">
+              <div className="bg-gray-900/50 p-2 rounded-t-lg mb-2">
+                <p className="text-xs font-semibold text-cyan-400 mb-2">COLUMN HEADERS</p>
+              <div className="flex items-center gap-2 pb-2">
                   <div className="w-8 shrink-0"></div> {/* Spacer for remove button */}
                   {manualHeaders.map((header, index) => (
                       <div key={index} className="relative flex-1 min-w-[120px]">
@@ -232,8 +234,11 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
                       <PlusIcon className="h-5 w-5" />
                   </button>
               </div>
+              </div>
               {/* Data Rows */}
-              <div className="space-y-2 mt-2 max-h-60 overflow-y-auto">
+              <div className="bg-gray-800/30 p-2 rounded-b-lg">
+                <p className="text-xs font-semibold text-purple-400 mb-2">RECIPIENT DATA</p>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
                 {manualData.map((row, rowIndex) => (
                   <div key={rowIndex} className="flex items-center gap-2">
                     <button onClick={() => removeRow(rowIndex)} className={`${iconButtonClass} w-8 shrink-0`}>
@@ -254,9 +259,10 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
                 ))}
               </div>
               <div className="mt-3">
-                <button onClick={addRow} className="text-cyan-400 hover:text-cyan-300 text-sm font-semibold flex items-center gap-2 p-1">
-                  <PlusIcon className="h-4 w-4"/> Add Recipient
+                <button onClick={addRow} className="text-purple-400 hover:text-purple-300 text-sm font-semibold flex items-center gap-2 p-1">
+                  <PlusIcon className="h-4 w-4"/> Add Recipient Row
                 </button>
+              </div>
               </div>
             </div>
           </div>
