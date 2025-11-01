@@ -187,7 +187,7 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
 
       {activeTab === 'csv' && (
         <div className="animate-fade-in">
-          <p className="text-sm text-gray-400 mb-4">Paste your CSV data below or upload a .csv file. The first row must be headers.</p>
+          <p className="text-sm text-gray-400 mb-4">Paste your CSV data below or upload a .csv file. First row must be headers. Click "Load Recipients" when ready.</p>
           <textarea
             className="w-full h-40 bg-gray-900 border border-gray-700 rounded-md p-3 text-sm font-mono focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition"
             value={csvText}
@@ -209,7 +209,7 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
 
       {activeTab === 'manual' && (
         <div className="animate-fade-in space-y-4">
-          <p className="text-sm text-gray-400">Add or remove columns and rows, then fill in your recipient data.</p>
+          <p className="text-sm text-gray-400">Add or remove columns and rows, then fill in your recipient data. Click "Load Recipients" when ready.</p>
           <div className="overflow-x-auto">
             <div className="min-w-full">
               {/* Headers */}
@@ -266,9 +266,12 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
       <div className="mt-6 space-y-3">
         <button
           onClick={handleParseClick}
-          className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-xl transition duration-300 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
+          className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-xl transition duration-300 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2"
         >
-          Parse Data
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+          Load Recipients
         </button>
         {onImportFromContacts && (
           <button
