@@ -16,25 +16,73 @@ const AssistantMessage = ({ message, onUseTemplateClick }: { message: ChatMessag
     let content;
     if (message.data?.type === 'stats' && message.data.payload) {
         content = (
-            <div className="bg-gray-700 p-3 rounded-lg text-sm">
-                <h4 className="font-bold mb-2">📊 Mail Merge Stats</h4>
-                <ul className="list-disc list-inside">
+            <div className="bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 p-4 rounded-xl text-sm">
+                <h4 className="font-bold mb-3 flex items-center gap-2">
+                    <span className="text-lg">📊</span> Mail Merge Stats
+                </h4>
+                <div className="space-y-2">
                     {Object.entries(message.data.payload).map(([key, value]) => (
-                        <li key={key}><span className="font-semibold capitalize">{key.replace(/_/g, ' ')}:</span> {String(value)}</li>
+                        <div key={key} className="flex justify-between items-center">
+                            <span className="text-gray-400 capitalize">{key.replace(/_/g, ' ')}:</span>
+                            <span className="font-semibold text-white">{String(value)}</span>
+                        </div>
                     ))}
-                </ul>
+                </div>
+            </div>
+        );
+    } else if (message.data?.type === 'send' && message.data.payload) {
+        const results = Array.isArray(message.data.payload.data) ? message.data.payload.data : [];
+        const successCount = results.filter((r: any) => r.status === 'success').length;
+        const errorCount = results.filter((r: any) => r.status === 'error').length;
+        
+        content = (
+            <div className="space-y-3">
+                <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-4 rounded-xl">
+                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                        <span className="text-lg">✉️</span> Send Results
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div className="bg-green-500/20 rounded-lg p-3 text-center">
+                            <div className="text-2xl font-bold text-green-400">{successCount}</div>
+                            <div className="text-xs text-gray-400">Sent</div>
+                        </div>
+                        {errorCount > 0 && (
+                            <div className="bg-red-500/20 rounded-lg p-3 text-center">
+                                <div className="text-2xl font-bold text-red-400">{errorCount}</div>
+                                <div className="text-xs text-gray-400">Failed</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {results.map((result: any, index: number) => (
+                        <div key={index} className={`p-2 rounded-lg text-xs ${result.status === 'success' ? 'bg-green-500/10 border border-green-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+                            <div className="flex items-center gap-2">
+                                <span className={result.status === 'success' ? 'text-green-400' : 'text-red-400'}>
+                                    {result.status === 'success' ? '✓' : '✗'}
+                                </span>
+                                <span className="font-mono text-gray-300">{result.email}</span>
+                            </div>
+                            {result.error && (
+                                <p className="text-red-400 mt-1 ml-5 text-xs">{result.error}</p>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     } else if (message.data?.type === 'preview' && Array.isArray(message.data.payload)) {
         content = (
              <div className="space-y-3">
-                <h4 className="font-bold text-sm">📧 Email Previews</h4>
+                <h4 className="font-bold text-sm flex items-center gap-2">
+                    <span className="text-lg">📧</span> Email Previews
+                </h4>
                 {message.data.payload.length > 0 ? message.data.payload.map((email: any, index: number) => (
-                    <div key={index} className="bg-gray-700 p-3 rounded-lg text-xs">
-                        <p><span className="font-semibold text-gray-400">To:</span> {email.to || 'N/A'}</p>
-                        <p><span className="font-semibold text-gray-400">Subject:</span> {email.subject || 'N/A'}</p>
-                        <hr className="border-gray-600 my-1" />
-                        <p className="whitespace-pre-wrap">{email.body || 'N/A'}</p>
+                    <div key={index} className="bg-gray-700/50 border border-gray-600 p-3 rounded-lg text-xs">
+                        <p><span className="font-semibold text-gray-400">To:</span> <span className="text-white">{email.to || 'N/A'}</span></p>
+                        <p><span className="font-semibold text-gray-400">Subject:</span> <span className="text-white">{email.subject || 'N/A'}</span></p>
+                        <hr className="border-gray-600 my-2" />
+                        <p className="whitespace-pre-wrap text-gray-300">{email.body || 'N/A'}</p>
                     </div>
                 )) : <p className="text-xs text-gray-400">No items to preview based on your criteria.</p>}
             </div>
@@ -43,12 +91,12 @@ const AssistantMessage = ({ message, onUseTemplateClick }: { message: ChatMessag
         content = (
             <div>
                 <p className="mb-2">{message.text}</p>
-                <div className="bg-gray-700 p-3 rounded-lg text-xs font-mono whitespace-pre-wrap border border-gray-600">
+                <div className="bg-gray-700/50 border border-gray-600 p-3 rounded-lg text-xs font-mono whitespace-pre-wrap">
                     {message.data.payload}
                 </div>
                 <button 
                     onClick={() => onUseTemplateClick(message.data.payload)}
-                    className="mt-2 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded-md transition"
+                    className="mt-3 text-xs bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white font-bold py-2 px-3 rounded-lg transition shadow-lg"
                 >
                     Use this draft
                 </button>

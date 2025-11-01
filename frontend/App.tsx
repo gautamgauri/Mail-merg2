@@ -283,15 +283,42 @@ function App() {
         body,
         userEmail: auth.userProfile?.email || null
       };
+      
+      // Add a message to the assistant showing we're sending
+      const sendingMessage: ChatMessage = {
+        id: Date.now().toString(),
+        sender: 'assistant',
+        text: `Sending ${recipients.length} personalized email${recipients.length !== 1 ? 's' : ''}...`
+      };
+      setMessages(prev => [...prev, sendingMessage]);
+      
       const apiResult = await callBackend(backendUrl, 'send', payload, tokenResponse.access_token);
+      
+      // Add result to assistant
       if (apiResult.success) {
-        alert('Send triggered successfully. Check the assistant panel for details.');
+        const resultMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'assistant',
+          text: 'Emails sent successfully!',
+          data: { type: 'send', payload: apiResult.data }
+        };
+        setMessages(prev => [...prev, resultMessage]);
       } else {
-        alert(`Send failed: ${apiResult.error}`);
+        const errorMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'assistant',
+          text: `Send failed: ${apiResult.error}`
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      alert(`Authorization or network error: ${msg}`);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'assistant',
+        text: `Authorization or network error: ${msg}`
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsSending(false);
     }
