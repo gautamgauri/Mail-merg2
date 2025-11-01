@@ -29,6 +29,8 @@ function App() {
   const [isSending, setIsSending] = useState(false);
   const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, userProfile: null });
   const tokenClientRef = useRef<any>(null);
+  const accessTokenRef = useRef<string | null>(null);
+  const tokenExpiryRef = useRef<number>(0);
 
 
   useEffect(() => {
@@ -96,6 +98,8 @@ function App() {
 
   const handleLogout = () => {
     setAuth({ isLoggedIn: false, userProfile: null });
+    accessTokenRef.current = null;
+    tokenExpiryRef.current = 0;
     if (window.google) {
       window.google.accounts.id.disableAutoSelect();
     }
@@ -103,17 +107,28 @@ function App() {
 
   const requestGapiToken = (): Promise<TokenResponse> => {
     return new Promise((resolve, reject) => {
+      // Check if we have a valid cached token
+      const now = Date.now();
+      if (accessTokenRef.current && tokenExpiryRef.current > now) {
+        resolve({ access_token: accessTokenRef.current, expires_in: Math.floor((tokenExpiryRef.current - now) / 1000) });
+        return;
+      }
+
       if (!tokenClientRef.current) {
         return reject(new Error("Google Auth is not initialized."));
       }
       tokenClientRef.current.callback = (tokenResponse: TokenResponse | { error: string }) => {
         if ('access_token' in tokenResponse) {
+          // Cache the token
+          accessTokenRef.current = tokenResponse.access_token;
+          // Tokens typically expire in 3600s, cache for 50 minutes to be safe
+          tokenExpiryRef.current = now + (tokenResponse.expires_in ? tokenResponse.expires_in * 1000 : 3000000);
           resolve(tokenResponse);
         } else {
           reject(new Error(tokenResponse.error || "User did not grant consent."));
         }
       };
-      tokenClientRef.current.requestAccessToken({ prompt: 'consent' });
+      tokenClientRef.current.requestAccessToken({ prompt: '' }); // Empty prompt = no consent screen if already granted
     });
   };
 
@@ -331,60 +346,88 @@ function App() {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto relative">
-        <GoogleAuth auth={auth} onLogout={handleLogout} />
-        <header className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-500">
-            AI Mail Merge Assistant
-          </h1>
-          <p className="mt-2 text-lg text-gray-400">
-            Craft personalized emails and control your mail merge with natural language.
-          </p>
-        </header>
-
-        {parsingError && (
-          <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative mb-6" role="alert">
-            <strong className="font-bold">Parsing Error: </strong>
-            <span className="block sm:inline">{parsingError}</span>
-          </div>
-        )}
-
-        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-8">
-            <DataInput onDataParsed={handleDataParsed} setParsingError={setParsingError} onImportFromContacts={importFromGoogleContacts} />
-            <TemplateEditor
-              subject={subject}
-              setSubject={setSubject}
-              body={body}
-              setBody={setBody}
-              headers={headers}
-            />
-          </div>
-          <div className="lg:sticky lg:top-8 self-start">
-            <Preview
-              recipients={recipients}
-              subjectTemplate={subject}
-              bodyTemplate={body}
-              onSendEmails={handleSendAll}
-              isSending={isSending}
-            />
-          </div>
-        </main>
-         <footer className="text-center mt-12 py-6 border-t border-gray-800">
-            <p className="text-sm text-gray-500">
-                Powered by React, Tailwind CSS, and the Google Gemini API.
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      {/* Animated background gradient */}
+      <div className="fixed inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none"></div>
+      
+      <div className="relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <GoogleAuth auth={auth} onLogout={handleLogout} />
+          
+          <header className="text-center mb-12 pt-8">
+            <div className="inline-block mb-4">
+              <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <h1 className="text-5xl sm:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mb-4">
+              AI Mail Merge Assistant
+            </h1>
+            <p className="mt-3 text-xl text-gray-300 max-w-2xl mx-auto">
+              Send personalized emails to your team with AI-powered templates
             </p>
-        </footer>
+            {auth.isLoggedIn && (
+              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 text-sm">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                Ready to send to {recipients.length} recipient{recipients.length !== 1 ? 's' : ''}
+              </div>
+            )}
+          </header>
+
+          {parsingError && (
+            <div className="max-w-4xl mx-auto mb-8 bg-red-900/20 border border-red-500/30 text-red-300 px-6 py-4 rounded-xl backdrop-blur-sm shadow-lg" role="alert">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div>
+                  <strong className="font-bold">Warning: </strong>
+                  <span>{parsingError}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <main className="grid grid-cols-1 xl:grid-cols-5 gap-6 lg:gap-8">
+            <div className="xl:col-span-3 space-y-6">
+              <DataInput onDataParsed={handleDataParsed} setParsingError={setParsingError} onImportFromContacts={importFromGoogleContacts} />
+              <TemplateEditor
+                subject={subject}
+                setSubject={setSubject}
+                body={body}
+                setBody={setBody}
+                headers={headers}
+              />
+            </div>
+            <div className="xl:col-span-2 xl:sticky xl:top-6 self-start">
+              <Preview
+                recipients={recipients}
+                subjectTemplate={subject}
+                bodyTemplate={body}
+                onSendEmails={handleSendAll}
+                isSending={isSending}
+              />
+            </div>
+          </main>
+          
+          <footer className="text-center mt-16 py-8 border-t border-gray-700/50">
+            <p className="text-sm text-gray-400">
+              Powered by React, Tailwind CSS, and Google Gemini API
+            </p>
+          </footer>
+        </div>
       </div>
-       <AIAssistant 
-            messages={messages} 
-            onSendMessage={handleSendMessage} 
-            isLoading={isAssistantLoading}
-            backendUrl={backendUrl}
-            setBackendUrl={setBackendUrl}
-            updateTemplate={updateTemplate}
-        />
+      
+      <AIAssistant 
+        messages={messages} 
+        onSendMessage={handleSendMessage} 
+        isLoading={isAssistantLoading}
+        backendUrl={backendUrl}
+        setBackendUrl={setBackendUrl}
+        updateTemplate={updateTemplate}
+      />
     </div>
   );
 }

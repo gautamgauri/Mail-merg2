@@ -163,8 +163,18 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
   const iconButtonClass = "p-1 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition";
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg">
-      <h2 className="text-xl font-bold text-cyan-400 mb-4">1. Recipient Data</h2>
+    <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-2xl">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-white">Recipient Data</h2>
+          <p className="text-xs text-gray-400">Add your team members</p>
+        </div>
+      </div>
 
       <div className="flex border-b border-gray-700 mb-4">
         <button onClick={() => setActiveTab('csv')} className={tabButtonStyle(activeTab === 'csv')}>
@@ -253,18 +263,22 @@ export const DataInput: React.FC<DataInputProps> = ({ onDataParsed, setParsingEr
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
         <button
           onClick={handleParseClick}
-          className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105"
+          className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-xl transition duration-300 ease-in-out transform hover:scale-[1.02] shadow-lg shadow-cyan-500/20"
         >
           Parse Data
         </button>
         {onImportFromContacts && (
           <button
             onClick={onImportFromContacts}
-            className="mt-2 w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out"
+            className="w-full bg-gray-700/50 hover:bg-gray-600/50 border border-gray-600 text-white font-semibold py-3 px-4 rounded-xl transition duration-300 ease-in-out flex items-center justify-center gap-2"
           >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
             Import from Google Contacts
           </button>
         )}
