@@ -28,11 +28,16 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Create .env file for build
+        run: |
+          cd frontend
+          cat > .env << EOF
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          EOF
+
       - name: Deploy to Cloud Run
-        env:
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          BACKEND_URL: ${{ secrets.BACKEND_URL }}
         run: |
           cd frontend
           gcloud run deploy mail-merge-frontend \
@@ -40,8 +45,7 @@ jobs:
             --region us-west1 \
             --allow-unauthenticated \
             --platform managed \
-            --project gen-lang-client-0307407360 \
-            --update-env-vars GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}",GEMINI_API_KEY="${GEMINI_API_KEY}",BACKEND_URL="${BACKEND_URL}"
+            --project gen-lang-client-0307407360
 
       - name: Display Service URL
         run: |
