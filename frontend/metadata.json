@@ -1,0 +1,5 @@
+{
+  "name": "AI Mail Merge Assistant",
+  "description": "A lightweight, AI-powered mail merge application to help you draft personalized emails from CSV data. Enhance your email templates with Gemini for better engagement.",
+  "requestFramePermissions": []
+}
