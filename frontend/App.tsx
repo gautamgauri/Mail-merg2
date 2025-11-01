@@ -121,13 +121,11 @@ function App() {
   }, [headers, allRecipients, subject, body, activeSegment, hasInitialized]);
 
   useEffect(() => {
-    console.log('[useEffect] groupHeader:', groupHeader, 'allRecipients count:', allRecipients.length);
     if (!groupHeader) {
       setSegments([]);
       if (activeSegment !== 'All') {
         setActiveSegment('All');
       }
-      console.log('[useEffect] No groupHeader, setting recipients to allRecipients');
       setRecipients(allRecipients);
       return;
     }
@@ -146,10 +144,8 @@ function App() {
     }
 
     if (nextSegment === 'All') {
-      console.log('[useEffect] Setting all recipients');
       setRecipients(allRecipients);
     } else {
-      console.log('[useEffect] Filtering recipients by segment:', nextSegment);
       setRecipients(allRecipients.filter(r => (r[groupHeader] || '').trim() === nextSegment));
     }
   }, [groupHeader, allRecipients, activeSegment]);
@@ -236,9 +232,6 @@ function App() {
   };
 
   const handleDataParsed = (parsedHeaders: string[], parsedRecipients: Recipient[]) => {
-    console.log('[handleDataParsed] Headers:', parsedHeaders);
-    console.log('[handleDataParsed] Recipients count:', parsedRecipients.length);
-    console.log('[handleDataParsed] Recipients:', parsedRecipients);
     setHeaders(parsedHeaders);
     setAllRecipients(parsedRecipients);
     // Select all recipients by default when new data is parsed
