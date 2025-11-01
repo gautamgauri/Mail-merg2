@@ -572,15 +572,83 @@ function App() {
   };
 
 
+  // If not logged in, show login gate
+  if (!auth.isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex items-center justify-center">
+        <div className="fixed inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none"></div>
+
+        <div className="relative z-10 max-w-2xl mx-auto px-4 text-center">
+          <div className="inline-block mb-6">
+            <div className="w-24 h-24 mx-auto bg-gradient-to-br from-cyan-400 to-purple-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 animate-pulse">
+              <svg className="w-14 h-14 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+          </div>
+
+          <h1 className="text-6xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 mb-6">
+            AI Mail Merge Assistant
+          </h1>
+
+          <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+            Send personalized emails to your team with AI-powered templates
+          </p>
+
+          <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-8 mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4">Sign in to get started</h2>
+            <p className="text-gray-400 mb-6">Sign in with your Google account to access the mail merge assistant</p>
+
+            <div className="flex justify-center">
+              <div id="google-signin-button"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+            <div className="bg-gray-800/30 border border-gray-700/30 rounded-xl p-4">
+              <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-white mb-1">Import Contacts</h3>
+              <p className="text-sm text-gray-400">Import up to 1000 contacts from Google Contacts</p>
+            </div>
+
+            <div className="bg-gray-800/30 border border-gray-700/30 rounded-xl p-4">
+              <div className="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-white mb-1">Personalize Templates</h3>
+              <p className="text-sm text-gray-400">Use placeholders like {'{{Name}}'} for personalization</p>
+            </div>
+
+            <div className="bg-gray-800/30 border border-gray-700/30 rounded-xl p-4">
+              <div className="w-10 h-10 bg-pink-500/20 rounded-lg flex items-center justify-center mb-3">
+                <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="font-semibold text-white mb-1">Select Recipients</h3>
+              <p className="text-sm text-gray-400">Choose exactly who receives your emails</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
       {/* Animated background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 pointer-events-none"></div>
-      
+
       <div className="relative z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <GoogleAuth auth={auth} onLogout={handleLogout} />
-          
+
           <header className="text-center mb-12 pt-8">
             <div className="inline-block mb-4">
               <div className="w-16 h-16 mx-auto bg-gradient-to-br from-cyan-400 to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/20">
