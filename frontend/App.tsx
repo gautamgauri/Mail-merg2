@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Recipient, ChatMessage, AuthState, TokenResponse } from './types';
 import { DataInput } from './components/DataInput';
 import { TemplateEditor } from './components/TemplateEditor';
@@ -15,9 +15,25 @@ declare global {
 // Vite inlines process.env.* at build; declare for TS type purposes
 declare const process: any;
 
+const LOCAL_STORAGE_KEY = 'mail-merge-app-state';
+
+type SavedState = {
+  headers: string[];
+  recipients: Recipient[];
+  subject: string;
+  body: string;
+  activeSegment?: string;
+  timestamp: string;
+};
+
 function App() {
   const [headers, setHeaders] = useState<string[]>([]);
+  const [allRecipients, setAllRecipients] = useState<Recipient[]>([]);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
+  const [segments, setSegments] = useState<string[]>([]);
+  const [activeSegment, setActiveSegment] = useState<string>('All');
+  const [pendingRestore, setPendingRestore] = useState<SavedState | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [subject, setSubject] = useState<string>('Special Offer for {{Name}}');
   const [body, setBody] = useState<string>('Hi {{Name}},\n\nWe have an exciting new product, the {{Product}}, that we think you\'ll love.\n\nBest regards,\nTeam Awesome');
   const [parsingError, setParsingError] = useState<string | null>(null);
@@ -37,25 +53,102 @@ function App() {
   const tokenClientRef = useRef<any>(null);
   const accessTokenRef = useRef<string | null>(null);
   const tokenExpiryRef = useRef<number>(0);
+  const [selectedRecipients, setSelectedRecipients] = useState<Set<number>>(new Set());
+
+  const groupHeader = useMemo(() => headers.find(h => h.toLowerCase() === 'group'), [headers]);
 
 
-  useEffect(() => {
-    // Auto-parse the default CSV data on initial load
+  const loadDefaultData = useCallback(() => {
     const defaultCsv = 'Email,Name,Product\njohn.doe@example.com,John Doe,SuperWidget\njane.smith@example.com,Jane Smith,MegaGadget';
     const lines = defaultCsv.trim().split('\n');
     const defaultHeaders = lines[0].split(',').map(h => h.trim());
     const defaultRecipients: Recipient[] = [];
     for (let i = 1; i < lines.length; i++) {
-        const data = lines[i].split(',');
-        const recipient: Recipient = {};
-        defaultHeaders.forEach((header, index) => {
-            recipient[header] = data[index] ? data[index].trim() : '';
-        });
-        defaultRecipients.push(recipient);
+      const data = lines[i].split(',');
+      const recipient: Recipient = {};
+      defaultHeaders.forEach((header, index) => {
+        recipient[header] = data[index] ? data[index].trim() : '';
+      });
+      defaultRecipients.push(recipient);
     }
     setHeaders(defaultHeaders);
-    setRecipients(defaultRecipients);
+    setAllRecipients(defaultRecipients);
   }, []);
+
+  useEffect(() => {
+    const savedRaw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedRaw) {
+      try {
+        const parsed: SavedState = JSON.parse(savedRaw);
+        if (parsed?.headers && parsed?.recipients) {
+          setPendingRestore(parsed);
+        } else {
+          loadDefaultData();
+        }
+      } catch {
+        loadDefaultData();
+      }
+    } else {
+      loadDefaultData();
+    }
+    setHasInitialized(true);
+  }, [loadDefaultData]);
+
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        window.clearTimeout(countdownTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasInitialized) return;
+    if (!headers.length && !allRecipients.length) return;
+    const payload: SavedState = {
+      headers,
+      recipients: allRecipients,
+      subject,
+      body,
+      activeSegment,
+      timestamp: new Date().toISOString()
+    };
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      console.warn('Failed to save session state', e);
+    }
+  }, [headers, allRecipients, subject, body, activeSegment, hasInitialized]);
+
+  useEffect(() => {
+    if (!groupHeader) {
+      setSegments([]);
+      if (activeSegment !== 'All') {
+        setActiveSegment('All');
+      }
+      setRecipients(allRecipients);
+      return;
+    }
+
+    const uniqueSegments = Array.from(new Set(allRecipients
+      .map(r => (r[groupHeader] || '').trim())
+      .filter(Boolean)));
+    setSegments(uniqueSegments);
+
+    const nextSegment = activeSegment === 'All' || uniqueSegments.includes(activeSegment)
+      ? activeSegment
+      : 'All';
+
+    if (nextSegment !== activeSegment) {
+      setActiveSegment(nextSegment);
+    }
+
+    if (nextSegment === 'All') {
+      setRecipients(allRecipients);
+    } else {
+      setRecipients(allRecipients.filter(r => (r[groupHeader] || '').trim() === nextSegment));
+    }
+  }, [groupHeader, allRecipients, activeSegment]);
 
   useEffect(() => {
     let tries = 0;
@@ -140,12 +233,56 @@ function App() {
 
   const handleDataParsed = (parsedHeaders: string[], parsedRecipients: Recipient[]) => {
     setHeaders(parsedHeaders);
-    setRecipients(parsedRecipients);
+    setAllRecipients(parsedRecipients);
+    // Select all recipients by default when new data is parsed
+    setSelectedRecipients(new Set(parsedRecipients.map((_, i) => i)));
   };
 
   const updateTemplate = (newSubject: string, newBody: string) => {
     setSubject(newSubject);
     setBody(newBody);
+  };
+
+  const handleToggleRecipient = (index: number) => {
+    setSelectedRecipients(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const handleToggleAll = () => {
+    if (selectedRecipients.size === recipients.length) {
+      setSelectedRecipients(new Set());
+    } else {
+      setSelectedRecipients(new Set(recipients.map((_, i) => i)));
+    }
+  };
+
+  const handleSegmentChange = (segment: string) => {
+    setActiveSegment(segment);
+  };
+
+  const restoreSavedState = () => {
+    if (!pendingRestore) return;
+    setHeaders(pendingRestore.headers || []);
+    setAllRecipients(pendingRestore.recipients || []);
+    setSubject(pendingRestore.subject || '');
+    setBody(pendingRestore.body || '');
+    setActiveSegment(pendingRestore.activeSegment || 'All');
+    setPendingRestore(null);
+  };
+
+  const discardSavedState = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    setPendingRestore(null);
+    if (!allRecipients.length) {
+      loadDefaultData();
+    }
   };
 
   const handleSendMessage = async (messageText: string) => {
@@ -280,26 +417,35 @@ function App() {
       setSendAlert({ type: 'error', message: 'Please sign in with Google to send emails.' });
       return;
     }
+
+    // Filter to only selected recipients
+    const selectedRecipientsArray = recipients.filter((_, index) => selectedRecipients.has(index));
+
+    if (selectedRecipientsArray.length === 0) {
+      setSendAlert({ type: 'error', message: 'No recipients selected. Please select at least one recipient.' });
+      return;
+    }
+
     try {
       setIsSending(true);
       const tokenResponse = await requestGapiToken();
       const payload = {
-        recipients,
+        recipients: selectedRecipientsArray,
         subject,
         body,
         userEmail: auth.userProfile?.email || null
       };
-      
+
       // Add a message to the assistant showing we're sending
       const sendingMessage: ChatMessage = {
         id: Date.now().toString(),
         sender: 'assistant',
-        text: `Sending ${recipients.length} personalized email${recipients.length !== 1 ? 's' : ''}...`
+        text: `Sending ${selectedRecipientsArray.length} personalized email${selectedRecipientsArray.length !== 1 ? 's' : ''}...`
       };
       setMessages(prev => [...prev, sendingMessage]);
-      
+
       const apiResult = await callBackend(backendUrl, 'send', payload, tokenResponse.access_token);
-      
+
       // Add result to assistant and auto-open it
       if (apiResult.success) {
         const resultMessage: ChatMessage = {
@@ -310,7 +456,7 @@ function App() {
         };
         setMessages(prev => [...prev, resultMessage]);
         setIsAssistantOpen(true); // Auto-open to show results
-        setSendAlert({ type: 'success', message: `Send completed for ${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}.` });
+        setSendAlert({ type: 'success', message: `Send completed for ${selectedRecipientsArray.length} recipient${selectedRecipientsArray.length !== 1 ? 's' : ''}.` });
       } else {
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -340,6 +486,10 @@ function App() {
     // Basic guardrails for empty recipients or missing headers
     if (!recipients || recipients.length === 0) {
       setSendAlert({ type: 'error', message: 'No recipients found. Please add recipient data first.' });
+      return;
+    }
+    if (selectedRecipients.size === 0) {
+      setSendAlert({ type: 'error', message: 'No recipients selected. Please select at least one recipient.' });
       return;
     }
     setIsConfirmOpen(true);
@@ -487,6 +637,9 @@ function App() {
                 isSending={isSending}
                 alert={sendAlert}
                 onUndo={undoSend}
+                selectedRecipients={selectedRecipients}
+                onToggleRecipient={handleToggleRecipient}
+                onToggleAll={handleToggleAll}
               />
             </div>
           </main>
@@ -515,7 +668,7 @@ function App() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setIsConfirmOpen(false)}>
           <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-11/12 max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-3">Confirm send</h3>
-            <p className="text-gray-300 mb-4">You are about to send <span className="font-semibold">{recipients.length}</span> personalized email{recipients.length !== 1 ? 's' : ''}.</p>
+            <p className="text-gray-300 mb-4">You are about to send <span className="font-semibold">{selectedRecipients.size}</span> personalized email{selectedRecipients.size !== 1 ? 's' : ''}.</p>
             <div className="bg-gray-900/60 border border-gray-700 rounded-lg p-3 text-sm mb-4">
               <p><span className="text-gray-400">From:</span> {auth.userProfile?.email || 'Your Google Account'}</p>
               <p className="truncate"><span className="text-gray-400">Subject:</span> {subject || '(empty)'}</p>

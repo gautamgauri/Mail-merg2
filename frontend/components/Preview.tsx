@@ -11,6 +11,9 @@ interface PreviewProps {
   isSending?: boolean;
   alert?: { type: 'success' | 'error' | 'info'; message: string } | null;
   onUndo?: () => void;
+  selectedRecipients?: Set<number>;
+  onToggleRecipient?: (index: number) => void;
+  onToggleAll?: () => void;
 }
 
 const renderMerge = (template: string, recipient: Recipient): string => {
@@ -24,10 +27,13 @@ const renderMerge = (template: string, recipient: Recipient): string => {
 
 type OutputFormat = 'text' | 'csv' | 'html';
 
-export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, bodyTemplate, onSendEmails, isSending, alert, onUndo }) => {
+export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, bodyTemplate, onSendEmails, isSending, alert, onUndo, selectedRecipients = new Set(), onToggleRecipient, onToggleAll }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>('text');
   const [copyButtonText, setCopyButtonText] = useState('Copy to Clipboard');
+
+  const selectedCount = selectedRecipients.size;
+  const allSelected = selectedCount === recipients.length && recipients.length > 0;
 
   const mergedEmails = useMemo(() => {
     if (!recipients || recipients.length === 0) return [];
@@ -126,13 +132,21 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                    {mergedEmails.length}
+                    {selectedCount}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">Ready to send</p>
+                    <p className="text-sm font-semibold text-white">Selected to send</p>
                     <p className="text-xs text-gray-400">{recipients.length} total recipient{recipients.length !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
+                {onToggleAll && (
+                  <button
+                    onClick={onToggleAll}
+                    className="text-xs bg-gray-700/60 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md border border-gray-600 transition"
+                  >
+                    {allSelected ? 'Deselect All' : 'Select All'}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -150,7 +164,7 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
               {onSendEmails && (
                 <button
                   onClick={onSendEmails}
-                  disabled={isSending}
+                  disabled={isSending || selectedCount === 0}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-xl transition duration-300 ease-in-out shadow-lg shadow-purple-500/20 flex items-center justify-center gap-2"
                 >
                   {isSending ? (
@@ -161,7 +175,7 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
                   ) : (
                     <>
                       <PaperAirplaneIcon className="h-5 w-5" />
-                      Send All Emails
+                      Send to {selectedCount} Recipient{selectedCount !== 1 ? 's' : ''}
                     </>
                   )}
                 </button>
@@ -169,25 +183,36 @@ export const Preview: React.FC<PreviewProps> = ({ recipients, subjectTemplate, b
             </div>
             
             <div className="space-y-3 max-h-[calc(100vh-28rem)] overflow-y-auto pr-2 custom-scrollbar">
-              {mergedEmails.slice(0, 5).map((email, index) => (
-                <div key={email.id} className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 border border-gray-700/50 rounded-xl p-4 transition duration-300 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {index + 1}
+              {mergedEmails.slice(0, 5).map((email, index) => {
+                const isSelected = selectedRecipients.has(index);
+                return (
+                  <div key={email.id} className={`bg-gradient-to-br from-gray-900/80 to-gray-800/80 border rounded-xl p-4 transition duration-300 hover:shadow-lg ${isSelected ? 'border-cyan-500/70 shadow-cyan-500/20' : 'border-gray-700/50 hover:border-cyan-500/50 hover:shadow-cyan-500/10'}`}>
+                    <div className="flex items-start gap-3 mb-3">
+                      {onToggleRecipient && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => onToggleRecipient(index)}
+                          className="mt-1 w-5 h-5 rounded border-gray-600 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-gray-800 cursor-pointer"
+                        />
+                      )}
+                      <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-purple-500 rounded-lg flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-1">TO</p>
+                        <p className="text-sm font-medium text-white truncate">{email.to}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-500 mb-1">TO</p>
-                      <p className="text-sm font-medium text-white truncate">{email.to}</p>
+                    <div className={onToggleRecipient ? "pl-16" : "pl-11"}>
+                      <p className="text-xs text-gray-500 mb-1">SUBJECT</p>
+                      <p className="text-sm font-medium text-gray-300 mb-3">{email.subject}</p>
+                      <p className="text-xs text-gray-500 mb-1">MESSAGE PREVIEW</p>
+                      <p className="text-xs text-gray-400 line-clamp-2">{email.body}</p>
                     </div>
                   </div>
-                  <div className="pl-11">
-                    <p className="text-xs text-gray-500 mb-1">SUBJECT</p>
-                    <p className="text-sm font-medium text-gray-300 mb-3">{email.subject}</p>
-                    <p className="text-xs text-gray-500 mb-1">MESSAGE PREVIEW</p>
-                    <p className="text-xs text-gray-400 line-clamp-2">{email.body}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {mergedEmails.length > 5 && (
                 <div className="text-center py-4">
                   <button 
