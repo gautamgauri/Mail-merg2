@@ -1,0 +1,47 @@
+name: Deploy Frontend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        run: |
+          cd frontend
+          gcloud run deploy mail-merge-frontend \
+            --source . \
+            --region us-west1 \
+            --allow-unauthenticated \
+            --platform managed \
+            --project gen-lang-client-0307407360
+
+      - name: Display Service URL
+        run: |
+          echo "Frontend deployed successfully!"
+          gcloud run services describe mail-merge-frontend \
+            --region us-west1 \
+            --project gen-lang-client-0307407360 \
+            --format 'value(status.url)'

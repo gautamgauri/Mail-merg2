@@ -27,6 +27,7 @@ function App() {
   ]);
   const [isAssistantLoading, setIsAssistantLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [auth, setAuth] = useState<AuthState>({ isLoggedIn: false, userProfile: null });
   const tokenClientRef = useRef<any>(null);
   const accessTokenRef = useRef<string | null>(null);
@@ -294,7 +295,7 @@ function App() {
       
       const apiResult = await callBackend(backendUrl, 'send', payload, tokenResponse.access_token);
       
-      // Add result to assistant
+      // Add result to assistant and auto-open it
       if (apiResult.success) {
         const resultMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -303,6 +304,7 @@ function App() {
           data: { type: 'send', payload: apiResult.data }
         };
         setMessages(prev => [...prev, resultMessage]);
+        setIsAssistantOpen(true); // Auto-open to show results
       } else {
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -310,6 +312,7 @@ function App() {
           text: `Send failed: ${apiResult.error}`
         };
         setMessages(prev => [...prev, errorMessage]);
+        setIsAssistantOpen(true); // Auto-open to show error
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
@@ -454,6 +457,8 @@ function App() {
         backendUrl={backendUrl}
         setBackendUrl={setBackendUrl}
         updateTemplate={updateTemplate}
+        isOpen={isAssistantOpen}
+        setIsOpen={setIsAssistantOpen}
       />
     </div>
   );

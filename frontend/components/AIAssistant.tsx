@@ -9,6 +9,8 @@ interface AIAssistantProps {
     backendUrl: string;
     setBackendUrl: (url: string) => void;
     updateTemplate: (subject: string, body: string) => void;
+    isOpen: boolean;
+    setIsOpen: (open: boolean) => void;
 }
 
 const AssistantMessage = ({ message, onUseTemplateClick }: { message: ChatMessage, onUseTemplateClick: (text: string) => void }) => {
@@ -118,8 +120,7 @@ const AssistantMessage = ({ message, onUseTemplateClick }: { message: ChatMessag
     );
 };
 
-export const AIAssistant: React.FC<AIAssistantProps> = ({ messages, onSendMessage, isLoading, backendUrl, setBackendUrl, updateTemplate }) => {
-    const [isOpen, setIsOpen] = useState(false);
+export const AIAssistant: React.FC<AIAssistantProps> = ({ messages, onSendMessage, isLoading, backendUrl, setBackendUrl, updateTemplate, isOpen, setIsOpen }) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [tempBackendUrl, setTempBackendUrl] = useState(backendUrl);
@@ -157,13 +158,35 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ messages, onSendMessag
 
     if (!isOpen) {
         return (
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 bg-gradient-to-br from-cyan-500 to-purple-600 text-white p-4 rounded-full shadow-lg hover:scale-110 transition-transform duration-300 z-50"
-                aria-label="Open AI Assistant"
-            >
-                <ChatBubbleIcon className="h-8 w-8" />
-            </button>
+            <div className="fixed bottom-6 right-6 z-50 group">
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="bg-gradient-to-br from-cyan-500 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition-transform duration-300 animate-bounce-slow relative"
+                    aria-label="Open AI Assistant"
+                >
+                    <ChatBubbleIcon className="h-8 w-8" />
+                    {messages.length > 1 && (
+                        <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                            {messages.length - 1}
+                        </span>
+                    )}
+                </button>
+                <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <div className="bg-gray-800 text-white text-sm px-3 py-2 rounded-lg shadow-lg whitespace-nowrap">
+                        AI Assistant
+                        <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                    </div>
+                </div>
+                <style>{`
+                    @keyframes bounce-slow {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-10px); }
+                    }
+                    .animate-bounce-slow {
+                        animation: bounce-slow 3s ease-in-out infinite;
+                    }
+                `}</style>
+            </div>
         );
     }
     
