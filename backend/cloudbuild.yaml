@@ -1,0 +1,18 @@
+steps:
+  # Deploy backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'ai-mail-merge-assistant'
+      - '--source'
+      - '.'
+      - '--region'
+      - 'us-west1'
+      - '--allow-unauthenticated'
+      - '--platform'
+      - 'managed'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
